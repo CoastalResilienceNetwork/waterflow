@@ -2,7 +2,27 @@
     "name": "Water Flow App",
 	"pluginHeight": 450,
 	"pluginWidth": 300,
-	"watersheds" : 
-	"riversLayer" :
+	"riversLayer" : "",
+	"huc8" : {"service": "http://50.18.215.52/arcgis/rest/services/Louisiana_Freshwater/Watershed_and_Political_Boundaries/MapServer/0", "symbol": {
+  "type": "esriSFS",
+  "style": "esriSFSSolid",
+  "color": [115,76,0,255],
+    "outline": {
+     "type": "esriSLS",
+     "style": "esriSLSSolid",
+     "color": [110,110,110,255],
+     "width": 1
+	 }}},
+	"huc12" : {"service": "http://50.18.215.52/arcgis/rest/services/Louisiana_Freshwater/Watershed_and_Political_Boundaries/MapServer/1", "symbol": {
+  "type": "esriSFS",
+  "style": "esriSFSSolid",
+  "color": [115,76,0,155],
+    "outline": {
+     "type": "esriSLS",
+     "style": "esriSLSSolid",
+     "color": [110,110,110,255],
+     "width": 1
+	 }}},
+	"catchmentService" : "http://50.18.215.52/arcgis/rest/services/Louisiana_Freshwater/catchments/MapServer/0"
 	
 }

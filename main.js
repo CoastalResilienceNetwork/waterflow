@@ -6,6 +6,8 @@ define([
 		"esri/toolbars/draw",
 		"esri/layers/ArcGISDynamicMapServiceLayer",
 		"esri/layers/ArcGISTiledMapServiceLayer",
+		"esri/layers/FeatureLayer",
+		"esri/InfoTemplate",
 		"esri/tasks/QueryTask",
 		"esri/tasks/query",
 		"esri/graphicsUtils",
@@ -13,6 +15,8 @@ define([
 		"esri/symbols/SimpleLineSymbol",
 		"esri/symbols/SimpleFillSymbol",
 		"esri/symbols/SimpleMarkerSymbol",
+		"esri/renderers/SimpleRenderer",
+		"dojo/_base/Color",
 		"esri/geometry/Extent",
 		"esri/geometry/Polygon",
 		"esri/request",
@@ -63,6 +67,8 @@ define([
 					Drawer,
 					ArcGISDynamicMapServiceLayer,
 					ArcGISTiledMapServiceLayer,
+					FeatureLayer,
+					InfoTemplate,
 					QueryTask,
 					esriQuery,
 					graphicsUtils,
@@ -70,6 +76,8 @@ define([
 					SimpleLineSymbol,
 					SimpleFillSymbol,
 					SimpleMarkerSymbol,
+					SimpleRenderer,
+					Color,
 					Extent,
 					Polygon,
 					esriRequest,
@@ -136,14 +144,68 @@ define([
 		       toolbarName: _config.name,
                toolbarType: "sidebar",
                allowIdentifyWhenActive: false,
-			   width: 420,
+			   width: _config.pluginWidth,
 			   infoGraphic: _infographic, 
 			   height: _config.pluginHeight,
 			   rendered: false,
 			   
                activate: function () { 
 			   			   
-					console.log("HI")
+					console.log("start");
+					
+					this.huc8Service = new FeatureLayer(this.configVizObject.huc8.service, {
+					  infoTemplate: new InfoTemplate("yo", "HI"),
+					  mode: FeatureLayer.MODE_ONDEMAND,
+					  outFields: ["*"]
+					});
+					
+					this.map.addLayer(this.huc8Service);
+					
+					this.huc8Service.on("mouse-over", lang.hitch(this, this.selectHuc8));		
+					
+					
+					
+					this.huc12Service = new FeatureLayer(this.configVizObject.huc12.service, {
+					  infoTemplate: new InfoTemplate("yo", "HI"),
+					  mode: FeatureLayer.MODE_ONDEMAND,
+					  outFields: ["*"]
+					});
+				
+					
+					symbol = new SimpleFillSymbol({
+  "type": "esriSFS",
+  "style": "esriSFSSolid",
+  "color": [115,76,0,0],
+    "outline": {
+     "type": "esriSLS",
+     "style": "esriSLSSolid",
+     "color": [110,110,110,0],
+     "width": 1
+	 }});
+					
+					this.huc12Service.setRenderer(new SimpleRenderer(symbol));
+					
+					this.map.addLayer(this.huc12Service);
+				
+					this.huc12Service.on("mouse-over", lang.hitch(this, this.selectHuc12));
+					
+					
+			   },
+			   
+			   selectHuc12: function(evt) {
+				
+					this.map.graphics.clear();
+					highlightSymbol = new SimpleFillSymbol(this.configVizObject.huc12.symbol);
+					
+					highlightGraphic = new Graphic(evt.graphic.geometry,highlightSymbol);
+					this.map.graphics.add(highlightGraphic);
+			   
+			   },
+			   
+			   selectHuc8: function(e) {
+			   
+					console.log(e);
+			   
 			   },
 			   
                deactivate: function () {
@@ -163,7 +225,7 @@ define([
 			
 					domClass.add(this.container, "claro");
 					
-					this.configVizObject = dojo.eval("[" + configData + "]")[0].regions;
+					this.configVizObject = dojo.eval("[" + configData + "]")[0];
 					
 					console.log(this.configVizObject);
 					
