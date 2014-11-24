@@ -2,27 +2,38 @@
     "name": "Water Flow App",
 	"pluginHeight": 450,
 	"pluginWidth": 300,
+	"extent": {
+	  "xmin": -1.06355863865E7,
+	  "ymin": 3357106.8816,
+	  "xmax": -9880534.1653,
+	  "ymax": 4067841.7837999985,
+	  "spatialReference": {
+	   "wkid": 102100,
+	   "latestWkid": 3857
+	  }},
 	"riversLayer" : "",
-	"huc8" : {"service": "http://50.18.215.52/arcgis/rest/services/Louisiana_Freshwater/Watershed_and_Political_Boundaries/MapServer/0", "symbol": {
-  "type": "esriSFS",
-  "style": "esriSFSSolid",
-  "color": [115,76,0,255],
-    "outline": {
-     "type": "esriSLS",
-     "style": "esriSLSSolid",
-     "color": [110,110,110,255],
-     "width": 1
-	 }}},
-	"huc12" : {"service": "http://50.18.215.52/arcgis/rest/services/Louisiana_Freshwater/Watershed_and_Political_Boundaries/MapServer/1", "symbol": {
-  "type": "esriSFS",
-  "style": "esriSFSSolid",
-  "color": [115,76,0,155],
-    "outline": {
-     "type": "esriSLS",
-     "style": "esriSLSSolid",
-     "color": [110,110,110,255],
-     "width": 1
-	 }}},
+	"huc8" : {"service": "http://50.18.215.52/arcgis/rest/services/Louisiana_Freshwater/Watershed_and_Political_Boundaries/MapServer/0", "nameField": "BASIN", 
+	"symbol": {
+	  "type": "esriSFS",
+	  "style": "esriSFSSolid",
+	  "color": [0,0,0,0],
+		"outline": {
+		 "type": "esriSLS",
+		 "style": "esriSLSSolid",
+		 "color": [20,20,20,240],
+		 "width": 1
+		 }}},
+	"huc12" : {"service": "http://50.18.215.52/arcgis/rest/services/Louisiana_Freshwater/Watershed_and_Political_Boundaries/MapServer/1", "nameField": "SUBWATERSHED", 
+	"symbol": {
+	  "type": "esriSFS",
+	  "style": "esriSFSSolid",
+	  "color": [115,76,0,155],
+		"outline": {
+		 "type": "esriSLS",
+		 "style": "esriSLSSolid",
+		 "color": [110,110,110,255],
+		 "width": 1
+		 }}},
 	"catchmentService" : "http://50.18.215.52/arcgis/rest/services/Louisiana_Freshwater/catchments/MapServer/0"
 	
 }

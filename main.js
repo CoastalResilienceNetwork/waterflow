@@ -2,7 +2,6 @@ define([
         "dojo/_base/declare",
 		"framework/PluginBase",
 		
-		"esri/request",
 		"esri/toolbars/draw",
 		"esri/layers/ArcGISDynamicMapServiceLayer",
 		"esri/layers/ArcGISTiledMapServiceLayer",
@@ -19,7 +18,9 @@ define([
 		"dojo/_base/Color",
 		"esri/geometry/Extent",
 		"esri/geometry/Polygon",
+		"esri/geometry/Point",
 		"esri/request",
+		"esri/geometry/screenUtils",
 		
 		"dijit/registry",
 		"dijit/form/Button",
@@ -63,7 +64,6 @@ define([
        ],
        function (declare, 
 					PluginBase, 
-					ESRIRequest,
 					Drawer,
 					ArcGISDynamicMapServiceLayer,
 					ArcGISTiledMapServiceLayer,
@@ -80,7 +80,9 @@ define([
 					Color,
 					Extent,
 					Polygon,
+					Point,
 					esriRequest,
+					screenUtils,
 					registry,
 					Button,
 					DropDownButton, 
@@ -153,18 +155,23 @@ define([
 			   			   
 					console.log("start");
 					
+					ext = new Extent(this.configVizObject.extent);
+					this.map.setExtent(ext);
+					
 					this.huc8Service = new FeatureLayer(this.configVizObject.huc8.service, {
-					  infoTemplate: new InfoTemplate("yo", "HI"),
-					  mode: FeatureLayer.MODE_ONDEMAND,
+					 // infoTemplate: new InfoTemplate("yo", "HI"),
+					  mode: FeatureLayer.MODE_SELECTION,
 					  outFields: ["*"]
 					});
+
+					symbol8 = new SimpleFillSymbol(this.configVizObject.huc8.symbol);
+					
+					this.huc8Service.setRenderer(new SimpleRenderer(symbol8));
 					
 					this.map.addLayer(this.huc8Service);
 					
-					this.huc8Service.on("mouse-over", lang.hitch(this, this.selectHuc8));		
-					
-					
-					
+					//this.huc8Service.on("mouse-over", lang.hitch(this, this.selectHuc8));		
+
 					this.huc12Service = new FeatureLayer(this.configVizObject.huc12.service, {
 					  infoTemplate: new InfoTemplate("yo", "HI"),
 					  mode: FeatureLayer.MODE_ONDEMAND,
@@ -173,22 +180,45 @@ define([
 				
 					
 					symbol = new SimpleFillSymbol({
-  "type": "esriSFS",
-  "style": "esriSFSSolid",
-  "color": [115,76,0,0],
-    "outline": {
-     "type": "esriSLS",
-     "style": "esriSLSSolid",
-     "color": [110,110,110,0],
-     "width": 1
-	 }});
+					  "type": "esriSFS",
+					  "style": "esriSFSSolid",
+					  "color": [115,76,0,0],
+						"outline": {
+						 "type": "esriSLS",
+						 "style": "esriSLSSolid",
+						 "color": [110,110,110,0],
+						 "width": 1
+						 }});
 					
 					this.huc12Service.setRenderer(new SimpleRenderer(symbol));
 					
 					this.map.addLayer(this.huc12Service);
 				
 					this.huc12Service.on("mouse-over", lang.hitch(this, this.selectHuc12));
+
+					this.mainpane = new ContentPane({
+
+					});
 					
+					dom.byId(this.container).appendChild(this.mainpane.domNode);
+					domClass.add(this.mainpane.domNode, "claro");
+					
+					parser.parse();
+					
+					nodetitle = domConstruct.create("div", {style:"font-weight: bold;padding:10px", innerHTML: "Move the mouse to explore the region and select a watershed."});
+					this.mainpane.domNode.appendChild(nodetitle);
+					
+					parser.parse();
+					
+					this.huc8title = domConstruct.create("div", {style:"", innerHTML: ""});
+					this.mainpane.domNode.appendChild(this.huc8title);
+					
+					parser.parse();
+					
+					this.huc12title = domConstruct.create("div", {style:"padding-top:10px", innerHTML: ""});
+					this.mainpane.domNode.appendChild(this.huc12title);
+					
+					parser.parse();
 					
 			   },
 			   
@@ -199,12 +229,45 @@ define([
 					
 					highlightGraphic = new Graphic(evt.graphic.geometry,highlightSymbol);
 					this.map.graphics.add(highlightGraphic);
+			
+					console.log(evt.graphic.attributes)//["HUC_12"])//.getCentroid();
+					
+					 var layerUrl = "http://ec2-54-81-38-200.compute-1.amazonaws.com/wf_api/Navigate/.jsonp";
+					  var layersRequest = esriRequest({
+						url: layerUrl,
+						content: { "direction": "upstream", "feature_type": "huc12", "feature_id" : "031601011002", "time": "50", "dist": "100" },
+						handleAs: "json",
+						callbackParamName: "callback"
+					  });
+					  layersRequest.then(
+						function(response) {
+						  console.log("Success: ", response);
+					  }, function(error) {
+						  console.log("Error: ", error);
+					  });
+					
+					html.set(this.huc12title, "HUC 12: <br>" + evt.graphic.attributes[this.configVizObject.huc12.nameField]);
+					
+					//screenUtils.toMapGeometry(this.map.extent, this.map.width, this.map.height, screenGeometry);
+					
+					sums = [0,0]
+					array.forEach(evt.graphic.geometry.rings[0], lang.hitch(this, function(entry, i) {
+						sums[0] = entry[0] + sums[0];
+						sums[1] = entry[1] + sums[1];
+					}));
+					point = new Point( {"x": sums[0] / evt.graphic.geometry.rings[0].length, "y": sums[1] / evt.graphic.geometry.rings[0].length, "spatialReference": {"wkid": 3857 } });
+					
+					query = new esriQuery();
+					query.geometry = point;
+					this.huc8Service.selectFeatures(query,FeatureLayer.SELECTION_NEW, lang.hitch(this, this.selectHuc8));
 			   
 			   },
 			   
 			   selectHuc8: function(e) {
 			   
-					console.log(e);
+					console.log(e[0].attributes[this.configVizObject.huc8.nameField]);
+					
+					html.set(this.huc8title, "HUC 8: <br>" + e[0].attributes[this.configVizObject.huc8.nameField]);
 			   
 			   },
 			   
@@ -215,6 +278,8 @@ define([
 			   },
 			   
                hibernate: function () { 
+					
+					domConstruct.empty(this.mainpane.domNode);
 					
 			   },
 			   
