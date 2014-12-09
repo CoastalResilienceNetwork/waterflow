@@ -203,17 +203,12 @@ define([
 					dom.byId(this.container).appendChild(this.mainpane.domNode);
 					domClass.add(this.mainpane.domNode, "claro");
 					
-					parser.parse();
-					
+
 					nodetitle = domConstruct.create("div", {style:"font-weight: bold;padding:10px", innerHTML: "Move the mouse to explore the region and select a watershed."});
 					this.mainpane.domNode.appendChild(nodetitle);
-					
-					parser.parse();
-					
+				
 					this.huc8title = domConstruct.create("div", {style:"", innerHTML: ""});
 					this.mainpane.domNode.appendChild(this.huc8title);
-					
-					parser.parse();
 					
 					this.huc12title = domConstruct.create("div", {style:"padding-top:10px", innerHTML: ""});
 					this.mainpane.domNode.appendChild(this.huc12title);
