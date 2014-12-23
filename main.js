@@ -225,12 +225,14 @@ define([
 					highlightGraphic = new Graphic(evt.graphic.geometry,highlightSymbol);
 					this.map.graphics.add(highlightGraphic);
 			
-					console.log(evt.graphic.attributes)//["HUC_12"])//.getCentroid();
+					console.log(evt.graphic.attributes["HUC_12"])//["HUC_12"])//.getCentroid();
+					
+					fid = evt.graphic.attributes["HUC_12"]
 					
 					 var layerUrl = "http://ec2-54-81-38-200.compute-1.amazonaws.com/wf_api/Navigate/.jsonp";
 					  var layersRequest = esriRequest({
 						url: layerUrl,
-						content: { "direction": "upstream", "feature_type": "huc12", "feature_id" : "031601011002", "time": "50", "dist": "100" },
+						content: { "direction": "upstream", "feature_type": "huc12", "feature_id" : fid, "time": "50", "dist": "100" },
 						handleAs: "json",
 						callbackParamName: "callback"
 					  });
