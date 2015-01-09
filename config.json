@@ -1,7 +1,7 @@
 {
     "name": "Water Flow App",
-	"pluginHeight": 450,
-	"pluginWidth": 300,
+	"pluginHeight": 350,
+	"pluginWidth": 600,
 	"extent": {
 	  "xmin": -1.06355863865E7,
 	  "ymin": 3357106.8816,

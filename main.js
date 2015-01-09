@@ -213,6 +213,9 @@ define([
 					this.huc12title = domConstruct.create("div", {style:"padding-top:10px", innerHTML: ""});
 					this.mainpane.domNode.appendChild(this.huc12title);
 					
+					this.huc12info = domConstruct.create("div", {style:"padding-top:10px", innerHTML: ""});
+					this.mainpane.domNode.appendChild(this.huc12info);
+					
 					parser.parse();
 					
 			   },
@@ -225,25 +228,37 @@ define([
 					highlightGraphic = new Graphic(evt.graphic.geometry,highlightSymbol);
 					this.map.graphics.add(highlightGraphic);
 			
-					console.log(evt.graphic.attributes["HUC_12"])//["HUC_12"])//.getCentroid();
+					console.log(evt.graphic.attributes["HUC_12"]);//["HUC_12"])//.getCentroid();
 					
 					fid = evt.graphic.attributes["HUC_12"]
 					
-					 var layerUrl = "http://ec2-54-81-38-200.compute-1.amazonaws.com/wf_api/Navigate/.jsonp";
-					  var layersRequest = esriRequest({
-						url: layerUrl,
-						content: { "direction": "upstream", "feature_type": "huc12", "feature_id" : fid, "time": "50", "dist": "100" },
-						handleAs: "json",
-						callbackParamName: "callback"
-					  });
-					  layersRequest.then(
-						function(response) {
-						  console.log("Success: ", response);
-					  }, function(error) {
-						  console.log("Error: ", error);
-					  });
-					
 					html.set(this.huc12title, "HUC 12: <br>" + evt.graphic.attributes[this.configVizObject.huc12.nameField]);
+					html.set(this.huc12info, "");
+					
+					console.log(this.huc12singlemetrics);
+					
+					this.metricReturnCount = 0;
+					
+					array.forEach(this.huc12singlemetrics, lang.hitch(this, function(metric, m) {
+					
+						 var layerUrl = "http://ec2-54-81-38-200.compute-1.amazonaws.com/wf_api/GetMetric/.jsonp";
+						  var layersRequest = esriRequest({
+							url: layerUrl,
+							content: { "metric_id": metric.id, "feature_type": "huc12", "feature_id" : fid, "time": "50", "dist": "100" },
+							handleAs: "json",
+							callbackParamName: "callback"
+						  });
+						  
+						  layersRequest.then(lang.hitch(this,this.showMetrics, metric));
+						  
+						//  layersRequest.then(
+						//	function(response) {
+						//	  console.log( m + " Success info: ", response);
+						//  }, function(error) {
+						//	  console.log("Error: ", error);
+						//  });
+					  
+					}));
 					
 					//screenUtils.toMapGeometry(this.map.extent, this.map.width, this.map.height, screenGeometry);
 					
@@ -280,6 +295,31 @@ define([
 					
 			   },
 			   
+			   showMetrics: function(metric, metricValues) {
+			   
+					this.metricReturnCount = this.metricReturnCount + 1
+					//console.log("mvals", metricValues, "m", metric);
+					
+					metric["values"] = metricValues;
+					
+					if (this.metricReturnCount == this.huc12singlemetrics.length) {
+						console.log("All Metrics Loaded");
+						huc12infoText = ""
+						array.forEach(this.huc12singlemetrics, lang.hitch(this, function(metric, m) {
+					
+							outval = metric.values[0].metric_value;
+							
+							huc12infoText = huc12infoText + metric.metric + ": " + outval + "<br>"; 
+							
+						}));
+						
+						html.set(this.huc12info, huc12infoText);
+					} 					
+					
+					
+			   
+			   },
+			   
 			   
 				initialize: function (frameworkParameters) {
 				
@@ -291,7 +331,37 @@ define([
 					
 					console.log(this.configVizObject);
 					
+					
+					 var layerUrl = "http://ec2-54-81-38-200.compute-1.amazonaws.com/wf_api/GetMetricsList/.jsonp";
+					  var layersRequest = esriRequest({
+						url: layerUrl,
+						content: { "metric_type": "single", "feature_type": "huc12"},
+						handleAs: "json",
+						callbackParamName: "callback"
+					  });
+					  
+					  layersRequest.then(lang.hitch(this,this.setupMetricLists)); 
+					  
+					//	function(response) {
+					//	  console.log("Success rester: ", response);
+					//  }, function(error) {
+					//	  console.log(alert("Waterflow Rest Server Does not appear to work"));
+					//  });
+					
+					
 				},
+				
+				setupMetricLists: function(response) {
+				
+					this.huc12singlemetrics = response;
+					console.log(this);
+					//console.log( "setupmets" ,response);
+					//array.forEach(response, lang.hitch(this, function(metric, i) {
+					//	console.log(metric);
+					//}));
+				
+				},
+				
 				
 			     resize: function(w, h) {
 				 
