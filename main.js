@@ -48,6 +48,11 @@ define([
 		"dojox/charting/action2d/Tooltip",
         "dojox/charting/themes/MiamiNice", 
 		"dojox/charting/widget/Legend",
+	
+		"dojox/charting/themes/Tom",
+		"dojox/charting/plot2d/Lines",
+		"dojox/charting/plot2d/Markers",
+		"dojox/charting/axis2d/Default",
 		
 		"dojo/html",
 		"dojo/_base/array",
@@ -108,6 +113,10 @@ define([
 					Tooltip, 
 					MiamiNice, 
 					Legend,
+					theme,
+					Lines,
+					Markers,
+					DefaultChart,
 					html,
 					array,
 					aspect,
@@ -173,12 +182,11 @@ define([
 					//this.huc8Service.on("mouse-over", lang.hitch(this, this.selectHuc8));		
 
 					this.huc12Service = new FeatureLayer(this.configVizObject.huc12.service, {
-					  infoTemplate: new InfoTemplate("yo", "HI"),
+					//  infoTemplate: new InfoTemplate("yo", "HI"),
 					  mode: FeatureLayer.MODE_ONDEMAND,
 					  outFields: ["*"]
 					});
 				
-					
 					symbol = new SimpleFillSymbol({
 					  "type": "esriSFS",
 					  "style": "esriSFSSolid",
@@ -194,8 +202,10 @@ define([
 					
 					this.map.addLayer(this.huc12Service);
 				
-					this.huc12Service.on("mouse-over", lang.hitch(this, this.selectHuc12));
-
+					this.map.on("click", lang.hitch(this, this.selectHuc12Click));
+					
+					this.tracksignal = this.huc12Service.on("mouse-over", lang.hitch(this, this.selectHuc12));
+					
 					this.mainpane = new ContentPane({
 
 					});
@@ -203,7 +213,14 @@ define([
 					dom.byId(this.container).appendChild(this.mainpane.domNode);
 					domClass.add(this.mainpane.domNode, "claro");
 					
-
+					this.startover();
+					
+			   },
+			   
+			   startover: function() {
+			   
+					domConstruct.empty(this.mainpane.domNode);
+					
 					nodetitle = domConstruct.create("div", {style:"font-weight: bold;padding:10px", innerHTML: "Move the mouse to explore the region and select a watershed."});
 					this.mainpane.domNode.appendChild(nodetitle);
 				
@@ -217,7 +234,93 @@ define([
 					this.mainpane.domNode.appendChild(this.huc12info);
 					
 					parser.parse();
+			   
+			   },
+			   
+			   selectHuc12Click: function() {
+			   
+			    this.tracksignal.remove();
+				console.log(this.currenthuc12);
+
+				this.map.setExtent(this.currenthuc8.geometry.getExtent(),true);
+
+				this.map.graphics.clear();
+				
+				highlightSymbol = new SimpleFillSymbol(this.configVizObject.huc12.symbolHighlight);
 					
+				highlightGraphic = new Graphic(this.currenthuc12.geometry,highlightSymbol);
+				this.map.graphics.add(highlightGraphic);
+							
+					hucname = this.currenthuc12.attributes[this.configVizObject.huc12.nameField];
+					
+					domConstruct.empty(this.mainpane.domNode);
+				
+					n = domConstruct.create("div", { innerHTML: "<p><b>" + hucname + "</b><p>" });
+					dom.byId(this.mainpane.domNode).appendChild(n);
+					
+					 
+					this.tabpan = new TabContainer({
+						style: "height: 250px; width: 100%;"
+					});
+					
+
+					this.SingleStats = new ContentPane({
+					//  style:"height:" + this.sph + "px !important",
+					  //style: "height: 100%; width: 100%;",
+					  title: "Single Statistics",
+					  innerHTML: this.currenthuc12.huc12infoText
+					});
+					
+					this.TSStats = new ContentPane({
+					//  style:"height:" + this.sph + "px !important",
+					  //style: "height: 100%; width: 100%;",
+					  title: "Time Series"
+					});
+					
+					this.CatchStats = new ContentPane({
+					//  style:"height:" + this.sph + "px !important",
+					  //style: "height: 100%; width: 100%;",
+					  title: "Catchments",
+					  innerHTML: "Show list of Catchments here"
+					});
+					
+					this.TSdiv = domConstruct.create("div");
+					dom.byId(this.TSStats.domNode).appendChild(this.TSdiv);
+					
+					parser.parse();
+					
+					dom.byId(this.mainpane.domNode).appendChild(this.tabpan.domNode);
+					
+					this.tabpan.addChild(this.SingleStats);
+					this.tabpan.addChild(this.TSStats);
+					this.tabpan.addChild(this.CatchStats);
+					
+					aspect.after(this.tabpan, "selectChild", lang.hitch(this,function (event) {
+						this.resize();
+					}));
+					
+					this.tabpan.startup();	
+					this.mainpane.startup();
+					
+					parser.parse();
+					
+					
+					this.TSmetricReturnCount = 0;
+					
+					array.forEach(this.huc12tsmetrics, lang.hitch(this, function(metric, m) {
+					
+						 var layerUrl = "http://ec2-54-81-38-200.compute-1.amazonaws.com/wf_api/GetMetric/.jsonp";
+						  var layersRequest = esriRequest({
+							url: layerUrl,
+							content: { "metric_id": metric.id, "feature_type": "huc12", "feature_id" : fid, "time": "50", "dist": "100" },
+							handleAs: "json",
+							callbackParamName: "callback"
+						  });
+						  
+						  layersRequest.then(lang.hitch(this,this.showTSMetrics, metric));
+					  
+					}));
+			   
 			   },
 			   
 			   selectHuc12: function(evt) {
@@ -226,14 +329,18 @@ define([
 					highlightSymbol = new SimpleFillSymbol(this.configVizObject.huc12.symbol);
 					
 					highlightGraphic = new Graphic(evt.graphic.geometry,highlightSymbol);
+					this.currenthuc12 = evt.graphic;
 					this.map.graphics.add(highlightGraphic);
 			
+					//highlightGraphic.on("click", lang.hitch(this, this.selectHuc12Click));
+					
 					console.log(evt.graphic.attributes["HUC_12"]);//["HUC_12"])//.getCentroid();
 					
 					fid = evt.graphic.attributes["HUC_12"]
 					
 					html.set(this.huc12title, "HUC 12: <br>" + evt.graphic.attributes[this.configVizObject.huc12.nameField]);
 					html.set(this.huc12info, "");
+					
 					
 					console.log(this.huc12singlemetrics);
 					
@@ -276,7 +383,8 @@ define([
 			   },
 			   
 			   selectHuc8: function(e) {
-			   
+
+					this.currenthuc8 = e[0];
 					console.log(e[0].attributes[this.configVizObject.huc8.nameField]);
 					
 					html.set(this.huc8title, "HUC 8: <br>" + e[0].attributes[this.configVizObject.huc8.nameField]);
@@ -293,6 +401,67 @@ define([
 					
 					domConstruct.empty(this.mainpane.domNode);
 					
+			   },
+
+			   showTSMetrics: function(metric, metricValues) {
+			   
+					TitleNode = domConstruct.create("div", { innerHTML: metric.metric });
+					this.TSdiv.appendChild(TitleNode);
+			   
+					ChartNode = domConstruct.create("div");
+					this.TSdiv.appendChild(ChartNode);
+			   
+					this.TSmetricReturnCount = this.TSmetricReturnCount + 1
+					//console.log("mvals", metricValues, "m", metric);
+					
+					metric["values"] = metricValues;
+					
+					chartData = [];
+					
+					array.forEach(metricValues, lang.hitch(this, function(val, v) {
+						
+						chartData.push(val.metric_value);
+					
+					}));
+					
+					if (this.TSmetricReturnCount == this.huc12tsmetrics.length) {
+						console.log("All TS Metrics Loaded");
+						huc12infoText = ""
+						array.forEach(this.huc12tsmetrics, lang.hitch(this, function(metric, m) {
+					
+							console.log(metric);
+							
+						}));
+						
+						//this.TSdiv.innerHTML = "Put Charts Here";
+					
+					};
+					
+						console.log(chartData);
+						//var chartData = [10000,9200,11811,12000,7662,13887,14200,12222,12000,10009,11288,12099];
+					 
+						// Create the chart within it's "holding" node
+						var chart = new Chart(ChartNode);
+					 
+						// Set the theme
+						chart.setTheme(theme);
+					 
+						// Add the only/default plot
+						chart.addPlot("default", {
+							type: "Lines",
+							markers: true
+						});
+					 
+						// Add axes
+						chart.addAxis("x");
+						chart.addAxis("y", { vertical: true, fixLower: "major", fixUpper: "major" });
+					 
+						// Add the series of data
+						chart.addSeries("SalesThisDecade",chartData);
+					 
+						// Render the chart!
+						chart.render();
+			
 			   },
 			   
 			   showMetrics: function(metric, metricValues) {
@@ -314,10 +483,10 @@ define([
 						}));
 						
 						html.set(this.huc12info, huc12infoText);
-					} 					
-					
-					
-			   
+						
+						this.currenthuc12.huc12infoText = huc12infoText;
+					}
+			
 			   },
 			   
 			   
@@ -342,6 +511,16 @@ define([
 					  
 					  layersRequest.then(lang.hitch(this,this.setupMetricLists)); 
 					  
+					 var layerUrl = "http://ec2-54-81-38-200.compute-1.amazonaws.com/wf_api/GetMetricsList/.jsonp";
+					  var layersRequest = esriRequest({
+						url: layerUrl,
+						content: { "metric_type": "timeseries", "feature_type": "huc12"},
+						handleAs: "json",
+						callbackParamName: "callback"
+					  });
+					  
+					  layersRequest.then(lang.hitch(this,this.setuptsMetricLists)); 
+					  
 					//	function(response) {
 					//	  console.log("Success rester: ", response);
 					//  }, function(error) {
@@ -350,15 +529,18 @@ define([
 					
 					
 				},
+
+				setuptsMetricLists: function(response) {
+		
+					this.huc12tsmetrics = response;
+					//console.log("TTTTTTTTTTT", this.huc12tsmetrics);
+				
+				},
 				
 				setupMetricLists: function(response) {
-				
+		
 					this.huc12singlemetrics = response;
-					console.log(this);
-					//console.log( "setupmets" ,response);
-					//array.forEach(response, lang.hitch(this, function(metric, i) {
-					//	console.log(metric);
-					//}));
+					//console.log(this);
 				
 				},
 				

@@ -33,7 +33,18 @@
 		 "style": "esriSLSSolid",
 		 "color": [110,110,110,255],
 		 "width": 1
-		 }}},
+		 }},
+	"symbolHighlight": {
+	  "type": "esriSFS",
+	  "style": "esriSFSSolid",
+	  "color": [255,0,0,50],
+		"outline": {
+		 "type": "esriSLS",
+		 "style": "esriSLSSolid",
+		 "color": [255,0,0,255],
+		 "width": 1
+		 }}
+		 },
 	"catchmentService" : "http://50.18.215.52/arcgis/rest/services/Louisiana_Freshwater/catchments/MapServer/0"
 	
 }
