@@ -207,7 +207,7 @@ define([
 					this.tracksignal = this.huc12Service.on("mouse-over", lang.hitch(this, this.selectHuc12));
 					
 					this.mainpane = new ContentPane({
-
+							style:"overflow: hidden;"
 					});
 					
 					dom.byId(this.container).appendChild(this.mainpane.domNode);
@@ -255,9 +255,12 @@ define([
 					
 					domConstruct.empty(this.mainpane.domNode);
 				
+					// style: "background: url(" + this.refreshURL + ") no-repeat center center; height: 32px; width: 32px; display: inline-block; position: absolute; left: 45%;"
 					n = domConstruct.create("div", { innerHTML: "<p><b>" + hucname + "</b><p>" });
 					dom.byId(this.mainpane.domNode).appendChild(n);
 					
+					//n2 = domConstruct.create("div", {style: "float:right !important", innerHTML: "<p><b>HI</b><p>" });
+					//dom.byId(this.mainpane.domNode).appendChild(n2);
 					 
 					this.tabpan = new TabContainer({
 						style: "height: 250px; width: 100%;"
@@ -500,6 +503,7 @@ define([
 					
 					console.log(this.configVizObject);
 					
+					this.refreshURL = localrequire.toUrl("./images/spinner.gif");
 					
 					 var layerUrl = "http://ec2-54-81-38-200.compute-1.amazonaws.com/wf_api/GetMetricsList/.jsonp";
 					  var layersRequest = esriRequest({
@@ -548,7 +552,11 @@ define([
 			     resize: function(w, h) {
 				 
 					cdg = domGeom.position(this.container);
-					//console.log(this.mainpane.domNode);
+					console.log(this.mainpane.domNode);
+					
+					this.sph = cdg.h-57;
+
+					this.tabpan.resize({"w" : cdg.w - 17, "h" : this.sph});
 
 				 },
 				
